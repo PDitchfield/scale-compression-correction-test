@@ -1,0 +1,451 @@
+---
+title: "Analysis of s-alinines run during calibration of 2026 seal std"
+author: "Peter Ditchfield"
+date: "2026-03-26"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+# we will use various tidyverse functions so
+library(tidyverse)
+```
+
+
+#### Data used for the analyses
+
+The data file used is  
+
+ Salanine-for-R.csv"
+
+This file is included in the folder with this r_markdown document but path names may change so beware.
+
+
+
+```{r load alanine data file, echo=FALSE}
+
+# load Salanine.csv into a data table
+Salanine <- read.csv("~/Desktop/2026 new seal/R-analysis/Salanine-for-R.csv")
+```
+
+```{r include=FALSE}
+# check the data table structure
+  str(Salanine) 
+  # should be 18 obs. of  10 variables
+
+```
+
+It may be useful to have both the Name and Run columns as factors so they can be used for plotting
+
+```{r set factors}
+  Salanine$Name <- as.factor(Salanine$Name)
+  Salanine$Run <- as.factor(Salanine$Run)
+```
+
+
+#### Figure 1a a basic cross plot
+
+```{r basic cross plot 1a}
+# simple plot of d13C v d15N coloured by burn number
+F1a <-  ggplot(data = Salanine, aes(x = d13C_VPDB, y = d15N_AIR, color = Run)) + 
+  geom_point(size = 2, show.legend = FALSE)+
+  geom_vline(xintercept = -27.11)+
+  geom_hline(yintercept = -1.56)+
+  coord_cartesian(xlim = c (-27.5, -26.75), ylim = c (-2,-1.25), expand = FALSE, default = FALSE, clip = "on")+
+  labs(y = delta ^15~'N AIR' , x = delta ^13~'C VPDB')
+  
+
+F1a
+```
+
+That is not great, the data looks to be systematically off from the 'certified' mean by about -0.1 per mil for carbon.
+ 
+#### Calculate some basic stats for the measured Alanine's
+ 
+```{r basic stats, include=FALSE}
+# for N15
+alanine_mean_d15N <- mean(Salanine$d15N_AIR)
+alanine_mean_d15N<- signif(alanine_mean_d15N,4)
+alanine_sd_d15N <- sd(Salanine$d15N_AIR)
+alanine_sd_d15N <- signif(alanine_sd_d15N,3)
+#for C13
+alanine_mean_d13C <- mean(Salanine$d13C_VPDB)
+alanine_mean_d13C <-signif(alanine_mean_d13C,4)
+alanine_sd_d13C  <- sd(Salanine$d13C_VPDB)
+alanine_sd_d13C  <- signif(alanine_sd_d13C, 3)
+
+#mean_d13C
+#sd_d13C
+
+#mean_d15N
+#sd_d15N
+```
+
+
+Mean value for $\delta$ ^13^C is `r alanine_mean_d13C` ‰ (VPDB) with a standard deviation of `r alanine_sd_d13C` ‰. The excepted value based on multiple years checking against international standards is -27.11‰ (VPDB). So there is an offset of ca.-0.07‰.
+
+Mean value for $\delta$ ^15^N is `r alanine_mean_d15N` ‰ (AIR) with a standard deviation of `r alanine_sd_d15N` ‰. The excepted value based on multiple years checking against international standards is -1.56‰ (AIR).
+
+Ah No !
+The alanine values used for diet are the 2022 calibration values 
+which are
+$\delta$ ^13^C = -27.18 ‰ (VPDB) with a standard deviation of 0.01
+and 
+$\delta$ ^15^N = -1.51 ‰ (AIR) with a standard deviation of 0.01
+
+So re plot with these values
+
+#### Figure 1b a basic cross plot
+
+```{r basic cross plot 1b}
+# simple plot of d13C v d15N coloured by burn number
+F1b <-  ggplot(data = Salanine, aes(x = d13C_VPDB, y = d15N_AIR, color = Run)) + 
+  geom_point(size = 2, show.legend = FALSE)+
+  geom_vline(xintercept = -27.18)+
+  geom_hline(yintercept = -1.51)+
+  coord_cartesian(xlim = c (-27.5, -26.75), ylim = c (-2,-1.25), expand = FALSE, default = FALSE, clip = "on")+
+  labs(y = delta ^15~'N AIR' , x = delta ^13~'C VPDB')
+  
+
+F1b
+```
+
+That looks much better although the $\delta$ ^15^N values look a bit skewed towards more negative values.
+
+
+#### Figure 2a KDE plot of salanine $\delta$ ^13^C data
+
+```{r Fig 2a kde plot, echo=FALSE, fig.show ='hold'}
+F2a <- ggplot(Salanine, aes(d13C_VPDB)) + 
+  geom_density( fill = "orange", alpha = 0.3) +  
+  geom_vline(xintercept = -27.18, color = "red")+
+  geom_vline(xintercept = (alanine_mean_d13C), color = "green")+
+ labs(x = delta ^13~'C VPDB' , y = 'density', title =  quote ("KDE of measured alanine" ~ delta ^13~'C values'))
+ 
+
+
+
+F2a
+```
+
+#### Figure 2b a qqplot of the $\delta$ ^13^C data
+
+```{r fig2b qqplot, echo=FALSE, fig.show ='hold'}
+F2b <- ggplot(Salanine, aes(sample = d13C_VPDB)) + 
+  stat_qq(size=1, color= "blue", alpha = 0.8) + 
+  stat_qq_line(col = "red") +
+  geom_hline(yintercept = -27.18)+
+  labs( y = delta ^13~'C VPDB')
+
+F2b
+```
+  
+That looks as it should relatively normal with a mean at very close to -27.18.
+
+ 
+#### Figure 3a KDE plot of salanine $\delta$ ^15^N data 
+
+```{r Fig 3a kde plot, echo=FALSE, fig.show ='hold'}
+F3a <- ggplot(Salanine, aes(d15N_AIR)) + 
+  geom_density( fill = "orange", alpha = 0.3) +  
+  geom_vline(xintercept = -1.51, color = "red")+
+  geom_vline(xintercept = (alanine_mean_d15N), color = "green")+
+ labs(x = delta ^15~'N AIR' , y = 'density')
+
+
+
+F3a
+```  
+
+#### Figure 3b a qqplot of the $\delta$ ^15^N data
+
+```{r fig3b qqplot, echo=FALSE, fig.show ='hold'}
+F3b <- ggplot(Salanine, aes(sample = d15N_AIR)) + 
+  stat_qq(size=1, color= "blue", alpha = 0.8) + 
+  stat_qq_line(col = "red") +
+  geom_hline(yintercept = -1.50)+
+  geom_hline(yintercept = -1.569, color = "blue")+
+  labs( y = delta ^15~'N AIR')
+
+F3b
+```
+
+This looks OK but not as good as the carbon data, with not as good a fit to the line of normality and with a mean of -1.569 ‰ that is somewhat displaced from the set value for $\delta$ ^15^N of -1.50 ‰.
+
+### What about the other standards in these runs
+
+Load other certified standards data file
+
+```{r load other standards data, include=FALSE}
+measured_certified <- read.csv("~/Desktop/2026 new seal/R-analysis/certified_standards.csv")
+
+# check the data frame structure
+  str(measured_certified) 
+  # should be 24 obs. of  12 variables
+```
+
+It may be useful to have both the Name and Run columns as factors so they can be used for plotting
+
+```{r set factors for certified}
+  measured_certified$Name <- as.factor(measured_certified$Name)
+  measured_certified$Run <- as.factor(measured_certified$Run)
+```
+
+#### Basic cross plot
+
+Note; only USGS40 and USGS88 have both carbon and nitrogen isotope data so these need to be separated out from the IAEA C6 for plotting. Note there are various data frames for various plots.
+
+
+```{r subset other standards by factor/ Name, include=FALSE}
+#there are lots of ways to do this but here is one using square brackets and the %in% operator
+measured_usgs <- measured_certified[measured_certified$Name %in% c("USGS40", "USGS88"), ]
+str(measured_usgs)
+
+measured_usgs40 <- measured_certified[measured_certified$Name  %in% c ("USGS40") , ]
+measured_usgs88 <- measured_certified[measured_certified$Name  %in% c ("USGS88") , ]
+# or can be done with == when only one factor needs to be matched
+measured_iaeaC6 <- measured_certified[measured_certified$Name == "IAEAC6" , ]
+
+```
+
+
+|                       Now to make a cross plot
+|                       please do not ignore my indents
+|
+|
+|              $\delta$ ^13^C VS $\delta$ ^15^N Cross Plot for USGS40 and USGS88 Measured Values
+
+```{r echo=FALSE}
+F4 <-  ggplot(data = measured_usgs, aes(x = d13C_VPDB, y = d15N_AIR, color = Name)) + 
+  geom_point(size = 1, show.legend = TRUE)+
+coord_cartesian(xlim = c (-30, -15), ylim = c (-10, 20), expand = FALSE, default = FALSE, clip = "on")+
+  labs(y = delta ^15~'N AIR' , x = delta ^13~'C VPDB')+
+  geom_hline(yintercept = -4.52, color = "red", alpha=0.5)+
+  geom_vline(xintercept = -26.39,color = "red", alpha=0.5)+
+geom_hline(yintercept = 14.96, color = "darkturquoise", alpha=0.5)+
+  geom_vline(xintercept = -16.06,color = "darkturquoise", alpha=0.5)
+
+F4
+```
+
+Not bad reasonably tight clusters. Looking at the values USGS40 they are slightly over measured in the negative direction WRT both carbon and nitrogen. For USGS88 they are slightly over measured WRT nitrogen and slightly under WRT carbon. 
+So not much scale compression for $\delta$ ^15^N but some scale compression for $\delta$ ^13^C at the less negative end i.e. as we move away from the $\delta$ ^13^C value of the working standard alanine in the positive direction. This is why we do a scale correction.
+
+
+### calculate some basic stats for measured USGS 40
+
+```{r basic stats for usgs40, include=FALSE}
+# for N15
+usgs40_mean_d15N <- mean(measured_usgs40$d15N_AIR)
+usgs40_mean_d15N<- signif(usgs40_mean_d15N,4)
+usgs40_sd_d15N <- sd(measured_usgs40$d15N_AIR)
+usgs40_sd_d15N <- signif(usgs40_sd_d15N,3)
+
+#for C13
+usgs40_mean_d13C <- mean(measured_usgs40$d13C_VPDB)
+usgs40_mean_d13C <-signif(usgs40_mean_d13C,4)
+usgs40_sd_d13C  <- sd(measured_usgs40$d13C_VPDB)
+usgs40_sd_d13C  <- signif(usgs40_sd_d13C, 3)
+
+#mean_d13C
+#sd_d13C
+
+#mean_d15N
+#sd_d15N
+```
+
+#### Figure 5a KDE plot of usgs40 $\delta$ ^13^C data 
+
+```{r Fig 5a kde plot, echo=FALSE, fig.show ='hold'}
+
+F5a <- ggplot(measured_usgs40, aes(d13C_VPDB)) + 
+  geom_density( fill = "orange", alpha = 0.3) +  
+  geom_vline(xintercept = -26.39, color = "red")+
+  geom_vline(xintercept = (usgs40_mean_d13C), color = "green")+
+ labs(x = delta ^13~'C VPDB' , y = 'density', title =  quote ("KDE of measured USGS40" ~ delta ^13~'C values'))+
+  coord_cartesian(xlim = c (-26.75, -26), ylim = c (4, 8), expand = FALSE, default = FALSE, clip = "on")
+
+
+F5a
+```
+
+
+
+So the mean measured $\delta$ ^13^C is very close ca. + 0.03‰ compared to the certified $\delta$ ^13^C value for USGS40.
+
+
+
+
+#### Figure 5b KDE plot of usgs40 $\delta$ ^15^N data 
+
+```{r Fig 5b kde plot, echo=FALSE, fig.show ='hold'}
+
+F5b <- ggplot(measured_usgs40, aes(d15N_AIR)) + 
+  geom_density( fill = "orange", alpha = 0.3) +  
+  geom_vline(xintercept = -4.52, color = "red")+
+  geom_vline(xintercept = (usgs40_mean_d15N), color = "green")+
+ labs(x = delta ^15~'N AIR' , y = 'density')+
+  coord_cartesian(xlim = c (-5.25, -4.5), ylim = c (0.5, 2.0), expand = FALSE, default = FALSE, clip = "on")
+
+
+F5b
+```  
+
+But the mean measured $\delta$ ^15^N is ca. 0.32 ‰ too negative compared to the certified value that is quite a lot more of an off set than the $\delta$ ^13^C data for USGS40.
+
+
+### Calculate some basic stats for measured USGS 88
+
+```{r basic stats for usgs88, include=FALSE}
+# for N15
+usgs88_mean_d15N <- mean(measured_usgs88$d15N_AIR)
+usgs88_mean_d15N<- signif(usgs88_mean_d15N,4)
+usgs88_sd_d15N <- sd(measured_usgs88$d15N_AIR)
+usgs88_sd_d15N <- signif(usgs88_sd_d15N,3)
+
+#for C13
+usgs88_mean_d13C <- mean(measured_usgs88$d13C_VPDB)
+usgs88_mean_d13C <-signif(usgs88_mean_d13C,4)
+usgs88_sd_d13C  <- sd(measured_usgs88$d13C_VPDB)
+usgs88_sd_d13C  <- signif(usgs88_sd_d13C, 3)
+
+#mean_d13C
+#sd_d13C
+
+#mean_d15N
+#sd_d15N
+```
+
+#### Figure 6a KDE plot of usgs88 $\delta$ ^13^C data 
+
+```{r Fig 6a kde plot, echo=FALSE, fig.show ='hold'}
+
+F6a <- ggplot(measured_usgs88, aes(d13C_VPDB)) + 
+  geom_density( fill = "orange", alpha = 0.3) +  
+  geom_vline(xintercept = -16.06, color = "red")+
+  geom_vline(xintercept = (usgs88_mean_d13C), color = "green")+
+ labs(x = delta ^13~'C VPDB' , y = 'density', title =  quote ("KDE of measured USGS 88" ~ delta ^13~'C values'))+
+  coord_cartesian(xlim = c (-16.75, -15.75), ylim = c (0.5, 6), expand = FALSE, default = FALSE, clip = "on")
+
+
+F6a
+```
+
+The mean measured $\delta$ ^13^C is reasonably close (ca. + 0.2‰) compared to the certified $\delta$ ^13^C value for USGS88.
+
+
+#### Figure 6b KDE plot of usgs88 $\delta$ ^15^N data 
+
+```{r Fig 6b kde plot, echo=FALSE, fig.show ='hold'}
+
+F6b <- ggplot(measured_usgs88, aes(d15N_AIR)) + 
+  geom_density( fill = "orange", alpha = 0.3) +  
+  geom_vline(xintercept = 14.96, color = "red")+
+  geom_vline(xintercept = (usgs88_mean_d15N), color = "green")+
+ labs(x = delta ^15~'N AIR' , y = 'density')+
+  coord_cartesian(xlim = c (14.5, 15.5), ylim = c (1.4, 2.5), expand = FALSE, default = FALSE, clip = "on")
+
+
+F6b
+```  
+
+The mean measured $\delta$ ^15^N for USGS88 is ca. 0.15 ‰ too positive compared to the certified value. However, given that the certified sd. is 0.14 and the measured sd. is 0.15 and that there is only 8 measured observations this is quite close. 
+
+### Calculate some basic stats for measured IAEA C6 $\delta$ ^13^C data
+
+```{r basic stats for iaeaC6, include=FALSE}
+
+# only for carbon as IAEA C6 sucrose contains no nitrogen
+iaeaC6_mean_d13C <- mean(measured_iaeaC6$d13C_VPDB)
+iaeaC6_mean_d13C <-signif(iaeaC6_mean_d13C,4)
+iaeaC6_sd_d13C  <- sd(measured_iaeaC6$d13C_VPDB)
+iaeaC6_sd_d13C  <- signif(iaeaC6_sd_d13C, 3)
+
+```
+
+#### Figure 7a KDE plot of usgs88 $\delta$ ^13^C data 
+
+```{r Fig 7a kde plot, echo=FALSE, fig.show ='hold'}
+
+F7a <- ggplot(measured_iaeaC6, aes(d13C_VPDB)) + 
+  geom_density( fill = "orange", alpha = 0.3) +  
+  geom_vline(xintercept = -10.45, color = "red")+
+  geom_vline(xintercept = (iaeaC6_mean_d13C), color = "green")+
+ labs(x = delta ^13~'C VPDB' , y = 'density', )+
+  #labs( title =  quote ("KDE of measured IAEA C6" ~ delta ^13~'C values'))+
+  coord_cartesian(xlim = c (-11, -10), ylim = c (0, 6), expand = TRUE, default = FALSE, clip = "on")
+
+
+F7a
+```
+
+The mean measured $\delta$ ^13^C of -10.6 is reasonably close to the certified mean of -10.45 compared to the certified $\delta$ ^13^C value for IAEA-C6 of -10.45, this ca. - 0.15‰ difference or under measurement of ^13^C maybe due to scale compression as this is ca. 16.7 ‰ away from the alanine working standard. However this value of -0.15‰ is less than the -0.21‰ value of the difference seen in the USGS88 data which is considerably closer to the the $\delta$ ^13^C value of the alanine working standard.
+
+
+
+#### Figure 8a plot of $\delta$ ^13^C data for measured standards agains certified values
+
+```{r}
+F8 <-  ggplot(data = measured_certified, aes(x = d13C_certified, y = d13C_VPDB, color = Name)) + 
+  geom_point(size=1, show.legend = TRUE)+
+coord_cartesian(xlim = c (-30, -5), ylim = c (-30, -5), expand = FALSE, default = FALSE, clip = "on")+
+  labs(y = delta ^13~'C measured' , x = delta ^13~'C certified')+
+ 
+  geom_vline(xintercept = -26.39,color = "green", alpha=0.5)+
+
+  geom_vline(xintercept = -16.06,color = "blue", alpha=0.5)+
+  geom_vline(xintercept = -10.43,color = "red", alpha=0.5)+
+  geom_abline( slope = 1, linewidth=0.25)
+
+F8
+```
+
+USGS40, which is very close to our alanine working standard sits on the 1:1 line. USGS88 and IAEAC6 which are further away from the working standard fall slightly below the 1:1 line and should be corrected for scale compression (under measurement).
+
+So a one way stretch correction for $\delta$ ^13^C measured value would be 
+
+The measured sample value + ((sample to alanine distance / C6 to alanine distance) + 0.15)
+
+so as a test apply the above correction to the measured standards.
+
+For mean IAEAC6
+
+```{r}
+
+correctedC6 <- ((-10.6 - -27.18)/(-10.6 - -27.18)*0.15) + iaeaC6_mean_d13C
+
+correctedC6
+```
+
+for USGS88mean
+
+
+```{r}
+
+corrected88 <- ((-16.27 - -27.18)/(-10.6 - -27.18) *0.15) + usgs88_mean_d13C
+
+corrected88
+```
+
+What is needed is an average value of offset normalised for the distance from the working standard.
+
+For USGS88 the distance from the working standard is
+(-16.06) - (-27.18) = 11.12.
+
+the offset is 0.21‰
+
+so the value for each per mil difference is 0.21/11.12 = 0.01888
+
+For IAEAC6 the distance from the working standard is 
+(-10.45) - (-27.18) = 16.73
+
+the offset is 0.15
+
+so the value for each per mil difference is 0.15/16.73 = 0.00896
+
+the average  for each per mil away from the alanine working standard is (0.01888+0.00896)/2 = 0.01392
+
+
+
